@@ -1,0 +1,5 @@
+{
+    "configuration": "CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashSize=1M0,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200",
+    "board": "esp8266:esp8266:esp8285",
+    "sketch": "CO22PI.ino"
+}
