@@ -1,15 +1,15 @@
 #include "sdcard.h"
 #include "pins.h"
 
-#define SPI_CLOCK SD_SCK_MHZ(4)
+#define SPI_CLOCK SD_SCK_MHZ(1)
 #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_CLOCK)
 
 bool SDCard::initialise(SdFat *sd)
 {
     if (!sd->begin(SD_CS_PIN, SPI_CLOCK))
     {
-        sd->errorPrint(&Serial);
-        Serial.println("[WARN] Failed to init sd");
+        // sd->errorPrint(&Serial);
+        // Serial.println("[WARN] Failed to init sd");
         return false;
     }
     return true;
@@ -56,29 +56,38 @@ bool SDCard::getCsvFile(SdFat *sd, char *latest_fname)
 
 bool SDCard::getFirstLine(SdFat *sd, char *fname, char *line)
 {
-
+    char linetoread[64];
     FsFile file = sd->open(fname, O_RDONLY);
-    int linetoread = 2;
-    while (linetoread-- > 0)
+    file.rewind();
+
+    while (file.available())
     {
-        int n = file.fgets(line, 64);
+        int n = file.fgets(linetoread, 64);
         if (n <= 0)
         {
-            Serial.println("[WARN] fgets failed");
+            Serial.println("[WARN] Read failed");
             file.close();
             return false;
         }
+        if (linetoread[n - 1] != '\n' && n == (sizeof(linetoread) - 1))
+        {
+            Serial.println("[WARN] Line too long");
+            file.close();
+            return false;
+        }
+        strcpy(line, linetoread);
     }
 
     file.close();
     return true;
 }
 
-char *SDCard::deleteFile(SdFat *sd, char *fname)
+bool SDCard::deleteFile(SdFat *sd, char *fname)
 {
     if (!sd->remove(fname))
     {
-        sd->errorHalt("failed to remove");
+        sd->errorHalt(&Serial);
+        Serial.println("[WARN] failed to remove");
     }
 }
 
