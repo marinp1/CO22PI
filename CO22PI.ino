@@ -33,53 +33,48 @@ void setup()
 
 void loop()
 {
-	if (millis() - sdcard.last_mosi < 1000)
-	{
-		Serial.println("Detected write");
-		delay(1000);
 
-		static SdFat *sd;
-		while (!sd)
+	SdFat sd;
+	char fname[64], line[64];
+
+	static bool should_read = false;
+
+	if (should_read)
+	{
+		sdcard.takeControl();
+		while (!sdcard.initialise(&sd))
 		{
-			sd = sdcard.initialise();
 			delay(100);
 		}
 
-		sdcard.getCsvFile(sd);
+		Serial.println("Trying to read data");
 
-		/*
-		char *fname;
-		while (!fname)
+		if (sdcard.getCsvFile(&sd, fname) && sdcard.getFirstLine(&sd, fname, line))
 		{
-			fname = sdcard.getCsvFile(sd);
-			delay(200);
+			Serial.println(fname);
+			Serial.println(line);
+			should_read = false;
+			sd.end();
+			sdcard.giveControl();
+			delay(1000);
 		}
-
-		Serial.println(fname);
-		*/
-
-		/*
-		char *line;
-		while (!line)
+		else
 		{
-			line = sdcard.getFirstLine(sd, fname);
-			delay(200);
+			Serial.println("Failed to find data");
+			sd.end();
+			sdcard.giveControl();
+			delay(100);
 		}
-
-		Serial.println(line);
-		*/
-
-		sd->end();
-		sd = 0;
-
-		delay(50);
-		sdcard.giveControl();
-
+	}
+	else if (millis() - sdcard.last_mosi < 500)
+	{
+		Serial.println("Detected write");
+		should_read = true;
 		delay(1000);
 	}
 	else
 	{
-		delay(100);
+		yield();
 	}
 }
 

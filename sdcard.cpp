@@ -4,24 +4,27 @@
 #define SPI_CLOCK SD_SCK_MHZ(4)
 #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_CLOCK)
 
-SdFat *SDCard::initialise()
+bool SDCard::initialise(SdFat *sd)
 {
-    static SdFat sd;
-    if (!sd.begin(SD_CS_PIN, SPI_CLOCK))
+    if (!sd->begin(SD_CS_PIN, SPI_CLOCK))
     {
-        sd.errorPrint(&Serial);
+        sd->errorPrint(&Serial);
         Serial.println("[WARN] Failed to init sd");
-        return 0;
+        return false;
     }
-    return &sd;
+    return true;
 };
 
 static char csv_ext[5] = ".csv";
 
-char *SDCard::getCsvFile(SdFat *sd)
+bool SDCard::getCsvFile(SdFat *sd, char *latest_fname)
 {
     File32 file, dir;
-    char fileName[64];
+    char fname[64];
+
+    uint16 latestdate = 0, latesttime = 0;
+    uint16 moddate, modtime;
+    bool found = false;
 
     if (!dir.open("/"))
     {
@@ -35,40 +38,40 @@ char *SDCard::getCsvFile(SdFat *sd)
             {
                 if (!file.isDir())
                 {
-                    file.getName(fileName, sizeof(fileName));
-                    Serial.println(fileName);
+                    file.getName(fname, sizeof(fname));
+                    file.getModifyDateTime(&moddate, &modtime);
+                    if (moddate > latestdate && modtime > latesttime)
+                    {
+                        strcpy(latest_fname, fname);
+                        found = true;
+                    }
                 }
             }
             file.close();
         }
     }
+
+    return found;
 }
 
-char *SDCard::getFirstLine(SdFat *sd, char *fname)
+bool SDCard::getFirstLine(SdFat *sd, char *fname, char *line)
 {
-    static char line[128] = "0";
 
     FsFile file = sd->open(fname, O_RDONLY);
-    int linetoread = 1;
+    int linetoread = 2;
     while (linetoread-- > 0)
     {
-        int n = file.fgets(line, 128);
+        int n = file.fgets(line, 64);
         if (n <= 0)
         {
             Serial.println("[WARN] fgets failed");
             file.close();
-            return 0;
+            return false;
         }
     }
 
     file.close();
-
-    if (line == "0")
-    {
-        return 0;
-    }
-
-    return line;
+    return true;
 }
 
 char *SDCard::deleteFile(SdFat *sd, char *fname)
