@@ -28,7 +28,7 @@ bool SDCard::getCsvFile(SdFat *sd, char *latest_fname)
 
     if (!dir.open("/"))
     {
-        Serial.println("[WARN] Failed to open root dir");
+        // Serial.println("[WARN] Failed to open root dir");
     }
     else
     {
@@ -65,13 +65,13 @@ bool SDCard::getFirstLine(SdFat *sd, char *fname, char *line)
         int n = file.fgets(linetoread, 64);
         if (n <= 0)
         {
-            Serial.println("[WARN] Read failed");
+            // Serial.println("[WARN] Read failed");
             file.close();
             return false;
         }
         if (linetoread[n - 1] != '\n' && n == (sizeof(linetoread) - 1))
         {
-            Serial.println("[WARN] Line too long");
+            // Serial.println("[WARN] Line too long");
             file.close();
             return false;
         }
@@ -86,8 +86,8 @@ bool SDCard::deleteFile(SdFat *sd, char *fname)
 {
     if (!sd->remove(fname))
     {
-        sd->errorHalt(&Serial);
-        Serial.println("[WARN] failed to remove");
+        // sd->errorHalt(&Serial);
+        // Serial.println("[WARN] failed to remove");
     }
 }
 

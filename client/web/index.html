@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CO2</title>
+    <script>
+      const entries = [];
+      const getLatestMeasurement = async () => {
+        return new Promise((resolve) => {
+          fetch("./latest.json").then((res) => {
+            if (res.ok) {
+              res.json().then((data) => {
+                const { date: olddate, time: oldtime } =
+                  entries[entries.length - 1] || {};
+                if (olddate === data.date && oldtime === data.time) {
+                  // do nothing
+                } else {
+                  entries.push(data);
+                  const elem = document.getElementById("table");
+                  const trElem = document.createElement("tr");
+                  Object.values(data).forEach((val) => {
+                    trElem.appendChild(
+                      (() => {
+                        const tdElem = document.createElement("td");
+                        tdElem.innerText = val;
+                        return tdElem;
+                      })()
+                    );
+                  });
+                  elem.appendChild(trElem);
+                }
+              });
+            }
+          });
+        });
+      };
+    </script>
+    <script>
+      getLatestMeasurement();
+      window.setInterval(() => {
+        getLatestMeasurement();
+      }, 5000);
+    </script>
+  </head>
+  <body>
+    <table id="table">
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>CO2</th>
+        <th>Temperature</th>
+        <th>Humidity</th>
+      </tr>
+    </table>
+  </body>
+</html>
