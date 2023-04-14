@@ -17,8 +17,9 @@ void setup()
 {
 	Serial.begin(9600);
 	INIT_LED;
-
 	LED_ON;
+
+	Serial.println("Starting...");
 
 	while (!Serial)
 	{
@@ -28,6 +29,8 @@ void setup()
 	sdcard.attachInterrupts();
 	sdcard.giveControl();
 	delay(2000);
+
+	Serial.println("Started!");
 	LED_OFF;
 }
 
@@ -47,7 +50,7 @@ void loop()
 			delay(100);
 		}
 
-		// Serial.println("Trying to read data");
+		Serial.println("Trying to read data");
 
 		if (sdcard.getCsvFile(&sd, fname) && sdcard.getFirstLine(&sd, fname, line))
 		{
@@ -61,7 +64,7 @@ void loop()
 		}
 		else
 		{
-			// Serial.println("Failed to find data");
+			Serial.println("Failed to find data");
 			sd.end();
 			sdcard.giveControl();
 			delay(100);
@@ -69,7 +72,7 @@ void loop()
 	}
 	else if (millis() - sdcard.last_mosi < 500)
 	{
-		// Serial.println("Detected write");
+		Serial.println("Detected write");
 		should_read = true;
 		delay(1000);
 	}

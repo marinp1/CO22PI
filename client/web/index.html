@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <title>CO2</title>
     <script>
       const entries = [];
@@ -33,22 +37,50 @@
           });
         });
       };
+      const getAllMeasurements = async () => {
+        fetch("./raw.csv").then((res) => {
+          if (res.ok) {
+            res.text().then((data) => {
+              Array.from(document.getElementsByClassName("gen")).forEach((e) =>
+                e.remove()
+              );
+              allEntries = data.split("\n");
+              allEntries.forEach((e) => {
+                const [, ...data] = e.split(",");
+                const elem = document.getElementById("table");
+                const trElem = document.createElement("tr");
+                trElem.className = "gen";
+                Object.values(data).forEach((val) => {
+                  trElem.appendChild(
+                    (() => {
+                      const tdElem = document.createElement("td");
+                      tdElem.innerText = val;
+                      return tdElem;
+                    })()
+                  );
+                });
+                elem.appendChild(trElem);
+              });
+            });
+          }
+        });
+      };
     </script>
     <script>
-      getLatestMeasurement();
+      getAllMeasurements();
       window.setInterval(() => {
-        getLatestMeasurement();
+        getAllMeasurements();
       }, 5000);
     </script>
   </head>
-  <body>
-    <table id="table">
+  <body style="font-size: 1rem">
+    <table id="table" style="width: 100%; border-collapse: collapse">
       <tr>
-        <th>Date</th>
-        <th>Time</th>
-        <th>CO2</th>
-        <th>Temperature</th>
-        <th>Humidity</th>
+        <th style="text-align: left">Date</th>
+        <th style="text-align: left">Time</th>
+        <th style="text-align: left">CO2</th>
+        <th style="text-align: left">Temperature</th>
+        <th style="text-align: left">Humidity</th>
       </tr>
     </table>
   </body>

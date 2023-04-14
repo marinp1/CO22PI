@@ -1,7 +1,7 @@
 #include "sdcard.h"
 #include "pins.h"
 
-#define SPI_CLOCK SD_SCK_MHZ(1)
+#define SPI_CLOCK SD_SCK_HZ(500000)
 #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_CLOCK)
 
 bool SDCard::initialise(SdFat *sd)
@@ -60,7 +60,8 @@ bool SDCard::getFirstLine(SdFat *sd, char *fname, char *line)
     FsFile file = sd->open(fname, O_RDONLY);
     file.rewind();
 
-    while (file.available())
+    int i = 2;
+    while (i-- > 0)
     {
         int n = file.fgets(linetoread, 64);
         if (n <= 0)

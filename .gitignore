@@ -1,2 +1,5 @@
 _old
 client/web/latest.json
+client/web/raw.csv
+*.bkp
+*.dtmp
