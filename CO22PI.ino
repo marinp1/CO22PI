@@ -22,6 +22,8 @@ volatile int last_mosi = 0;
 volatile bool should_read = false;
 volatile bool reading = false;
 
+bool DEBUG_ACTIVE = false;
+
 void setup()
 {
 	Serial.begin(9600);
@@ -29,7 +31,10 @@ void setup()
 	LED_ON;
 
 	Serial.println("");
-	Serial.println("[INFO] Starting...");
+	if (DEBUG_ACTIVE)
+	{
+		Serial.println("[INFO] Starting...");
+	}
 
 	while (!Serial)
 	{
@@ -48,7 +53,9 @@ void setup()
 		{ 
 			if (reading) return;
 			last_miso = millis();
-			Serial.println("MISO " + String(millis())); },
+			if (DEBUG_ACTIVE) {
+				Serial.println("MISO " + String(millis()));
+		 }; },
 		CHANGE);
 
 	attachInterrupt(
@@ -57,10 +64,15 @@ void setup()
 			if (reading) return;
 			last_mosi = millis();
 			should_read = true;
-			Serial.println("MOSI " + String(millis())); },
+			if (DEBUG_ACTIVE) {
+				Serial.println("MOSI " + String(millis()));
+		 }; },
 		CHANGE);
 
-	Serial.println("[INFO] Started!");
+	if (DEBUG_ACTIVE)
+	{
+		Serial.println("[INFO] Started!");
+	}
 
 	LED_OFF;
 }
@@ -68,8 +80,105 @@ void setup()
 #define SPI_CLOCK SD_SCK_HZ(500000)
 #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_HALF_SPEED)
 
-char *CSV_EXT = ".csv";
-bool DEBUG_ACTIVE = false;
+String getCsvFile(SdFs *sd)
+{
+
+	File32 file, dir;
+	char fname[64];
+
+	uint16 latestdate = 0, latesttime = 0;
+	uint16 moddate, modtime;
+
+	String latest_fname = "";
+
+	if (!dir.open("/"))
+	{
+		if (DEBUG_ACTIVE)
+		{
+			Serial.println("[ERR] Failed to open root directory!");
+		}
+	}
+	else
+	{
+		while (file.openNext(&dir, O_READ))
+		{
+			if (!file.isHidden() && file.isFile())
+			{
+				file.getName(fname, sizeof(fname));
+				file.getModifyDateTime(&moddate, &modtime);
+				if (String(fname).endsWith(".csv"))
+				{
+					if (moddate > latestdate && modtime > latesttime)
+					{
+						latest_fname = String(fname);
+					}
+				}
+			}
+			file.close();
+		}
+	}
+
+	return latest_fname;
+}
+
+String readLastLineOfFile(SdFs *sd, String fname)
+{
+	char linetoread[64];
+	char line[64];
+
+	FsFile file = sd->open(fname, O_RDONLY);
+	file.rewind();
+
+	int i = 2;
+	while (i-- > 0)
+	{
+		int n = file.fgets(linetoread, 64);
+		if (n <= 0)
+		{
+			if (DEBUG_ACTIVE)
+			{
+				Serial.println("[WARN] Read failed");
+			}
+			file.close();
+			return "";
+		}
+		if (linetoread[n - 1] != '\n' && n == (sizeof(linetoread) - 1))
+		{
+			if (DEBUG_ACTIVE)
+			{
+				Serial.println("[WARN] Line too long");
+			}
+			file.close();
+			return "";
+		}
+		strcpy(line, linetoread);
+	}
+
+	file.close();
+
+	String lineData = String(line);
+	lineData.trim();
+
+	return lineData;
+}
+
+String deleteFile(SdFs *sd, String fname)
+{
+	if (sd->remove(fname))
+	{
+		if (DEBUG_ACTIVE)
+		{
+			Serial.println("[INFO] File deleted");
+		}
+	}
+	else
+	{
+		if (DEBUG_ACTIVE)
+		{
+			Serial.println("[ERR] File deletion failed");
+		}
+	}
+}
 
 void loop(void)
 {
@@ -80,7 +189,10 @@ void loop(void)
 			should_read = false;
 			reading = true;
 
-			Serial.println("[INFO] Trying to read " + String(millis()));
+			if (DEBUG_ACTIVE)
+			{
+				Serial.println("[INFO] Trying to read " + String(millis()));
+			}
 
 			pinMode(MISO_PIN, SPECIAL);
 			pinMode(MOSI_PIN, SPECIAL);
@@ -90,12 +202,44 @@ void loop(void)
 			SdFs sd;
 			if (sd.begin(SD_CONFIG))
 			{
-				sd.ls();
+				String fname = getCsvFile(&sd);
+				if (fname.length() == 0)
+				{
+					if (DEBUG_ACTIVE)
+					{
+						Serial.println("[ERR] Failed to find file");
+					}
+				}
+				else
+				{
+					if (DEBUG_ACTIVE)
+					{
+
+						Serial.println("[INFO] Found: " + fname);
+					}
+					String line = readLastLineOfFile(&sd, fname);
+					if (line.length() == 0)
+					{
+						if (DEBUG_ACTIVE)
+						{
+
+							Serial.println("[ERR] Failed to read file");
+						}
+					}
+					else
+					{
+						Serial.println(line);
+						deleteFile(&sd, fname);
+					}
+				}
 				sd.end();
 			}
 			else
 			{
-				Serial.println("[ERR] Failed to start SD card");
+				if (DEBUG_ACTIVE)
+				{
+					Serial.println("[ERR] Failed to start SD card");
+				}
 			}
 
 			pinMode(MISO_PIN, INPUT);
