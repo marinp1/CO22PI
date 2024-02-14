@@ -1,5 +1,6 @@
 #include <SdFat.h>
 #include <SPI.h>
+#include <list>
 // Include pin related data
 #include "pins.h"
 
@@ -20,7 +21,7 @@ enum LogLevel
 };
 
 // Logs to show
-const LogLevel APP_LOG_LEVEL = LogLevel::Error;
+const LogLevel APP_LOG_LEVEL = LogLevel::None;
 
 String logLevelToText(LogLevel level)
 {
@@ -95,16 +96,30 @@ void setup()
 	log(LogLevel::Info, "Started!");
 }
 
-/* Return name of last modified CSV file.  */
-String getCsvFile(SdFs *sd)
+struct CsvFileResponse
 {
+	String latest_fname;		 // Filename to return
+	std::list<String> file_list; // List of all files Found
+};
+
+/* Return name of last modified CSV file.  */
+auto getCsvFile(SdFs *sd)
+{
+	sd->chvol();
+
 	File32 file, dir;
+
+	// Response data
+	CsvFileResponse response;
+	response.latest_fname = "";
+	response.file_list = {};
 
 	if (!dir.open("/"))
 	{
 
 		log(LogLevel::Error, "Failed to open root directory!");
-		return "";
+		dir.close();
+		return response;
 	}
 
 	// Variables to keep track
@@ -112,32 +127,35 @@ String getCsvFile(SdFs *sd)
 	uint16 latestdate = 0, latesttime = 0;
 	uint16 moddate, modtime;
 
-	// Filename to return
-	String latest_fname = "";
-
 	while (file.openNext(&dir, O_READ))
 	{
 		file.clearWriteError();
 		file.clearError();
-		if (!file.isHidden() && file.isFile())
+		if (!file.isDir())
 		{
 			file.getName(fname, sizeof(fname));
-			file.getModifyDateTime(&moddate, &modtime);
-			if (String(fname).endsWith(".csv") && moddate > latestdate && modtime > latesttime)
+			response.file_list.push_back(String(fname));
+			if (!file.isHidden())
 			{
+				file.getModifyDateTime(&moddate, &modtime);
+				if (String(fname).endsWith(".csv") && moddate > latestdate && modtime > latesttime)
+				{
 
-				latest_fname = String(fname);
+					response.latest_fname = String(fname);
+				}
 			}
 		}
 		file.close();
 	}
 
-	return latest_fname;
+	return response;
 }
 
 /* Return 2nd line of given file. */
 String readLastLineOfFile(SdFs *sd, String fname)
 {
+	sd->chvol();
+
 	// Open file in read only mode
 	FsFile file = sd->open(fname, O_RDONLY);
 	file.rewind();
@@ -165,22 +183,30 @@ String readLastLineOfFile(SdFs *sd, String fname)
 	}
 
 	file.close();
-
 	line.trim();
 	return line;
 }
 
-/* Try to delete given file. */
-String deleteFile(SdFs *sd, String fname)
+/* Delete ALL files on SD card */
+void deleteAllFiles(SdFs *sd, std::list<String> filesToDelete)
 {
-	if (sd->remove(fname))
+	sd->chvol();
+
+	std::list<String>::iterator it;
+	for (it = filesToDelete.begin(); it != filesToDelete.end(); ++it)
 	{
-		log(LogLevel::Info, "File deleted successfully");
+		String name = it->c_str();
+		if (sd->remove(name))
+		{
+			log(LogLevel::Info, "Deleted " + name);
+		}
+		else
+		{
+			log(LogLevel::Error, "Failed to delete " + name);
+		}
 	}
-	else
-	{
-		log(LogLevel::Error, "File deletion failed");
-	}
+
+	log(LogLevel::Debug, "Procedure deleteAllFiles complete");
 }
 
 void loop(void)
@@ -195,16 +221,17 @@ void loop(void)
 		SdFs sd;
 		if (sd.begin(SD_CONFIG))
 		{
-			String fname = getCsvFile(&sd);
-			if (fname.length() == 0)
+
+			auto csvResponse = getCsvFile(&sd);
+			if (csvResponse.latest_fname.length() == 0)
 			{
 
 				log(LogLevel::Error, "Failed to find suitable CSV file");
 			}
 			else
 			{
-				log(LogLevel::Info, "Found file with name: " + fname);
-				String line = readLastLineOfFile(&sd, fname);
+				log(LogLevel::Info, "Found file with name: " + csvResponse.latest_fname);
+				String line = readLastLineOfFile(&sd, csvResponse.latest_fname);
 				if (line.length() == 0)
 				{
 
@@ -214,13 +241,12 @@ void loop(void)
 				{
 					Serial.println(line);
 				}
-				deleteFile(&sd, fname);
 			}
+			deleteAllFiles(&sd, csvResponse.file_list);
 			sd.end();
 		}
 		else
 		{
-
 			log(LogLevel::Error, "Failed to start SD card");
 		}
 
