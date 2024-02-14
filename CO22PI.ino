@@ -102,6 +102,8 @@ String getCsvFile(SdFs *sd)
 	{
 		while (file.openNext(&dir, O_READ))
 		{
+			file.clearWriteError();
+			file.clearError();
 			if (!file.isHidden() && file.isFile())
 			{
 				file.getName(fname, sizeof(fname));
@@ -124,7 +126,7 @@ String getCsvFile(SdFs *sd)
 String readLastLineOfFile(SdFs *sd, String fname)
 {
 	char linetoread[64];
-	char line[64];
+	char line[64] = "";
 
 	FsFile file = sd->open(fname, O_RDONLY);
 	file.rewind();
@@ -194,11 +196,6 @@ void loop(void)
 				Serial.println("[INFO] Trying to read " + String(millis()));
 			}
 
-			pinMode(MISO_PIN, SPECIAL);
-			pinMode(MOSI_PIN, SPECIAL);
-			pinMode(SCLK_PIN, SPECIAL);
-			pinMode(SD_CS_PIN, OUTPUT);
-
 			SdFs sd;
 			if (sd.begin(SD_CONFIG))
 			{
@@ -224,6 +221,7 @@ void loop(void)
 						{
 
 							Serial.println("[ERR] Failed to read file");
+							deleteFile(&sd, fname);
 						}
 					}
 					else
