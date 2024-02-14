@@ -1,0 +1,65 @@
+<mxfile host="app.diagrams.net" modified="2024-02-14T11:01:36.993Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0" etag="rICCyw7Fizz1yqcF1C96" version="23.1.4" type="device" pages="2">
+  <diagram name="Overview" id="fZxvlP8URf7Da7e91xO-">
+    <mxGraphModel dx="1049" dy="1393" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="xjVbjWH6JzId5MujHkEE-3" value="&lt;b&gt;Air CO2ntrol 5000&lt;/b&gt;&lt;br&gt;&lt;br&gt;(temp, humidity, co2)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="40" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-5" value="&lt;font&gt;Micro SD Slot&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;horizontal=0;fontColor=#030303;" parent="1" vertex="1">
+          <mxGeometry x="220" y="50" width="40" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-6" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="260" y="60" width="460" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-9" value="" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=1;right=1;left=1;top=0;fillColor=default;routingCenterX=-0.5;" parent="1" vertex="1">
+          <mxGeometry x="620" y="139" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-10" value="&lt;font&gt;SD Card Adapter&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;horizontal=1;verticalAlign=middle;fontColor=#030303;" parent="1" vertex="1">
+          <mxGeometry x="600" y="180" width="140" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-11" value="FYSETC SD Card&amp;nbsp;&lt;br&gt;(ESP8255)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="610" y="280" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-12" value="Micro SD Card" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="670" y="380" width="46" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-13" value="Micro USB Port" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="570" y="370" width="60" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-14" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="320" y="380" width="250" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="xjVbjWH6JzId5MujHkEE-18" value="&lt;b&gt;Raspberry Pi&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;Read serial port as Home Assistant sensor&lt;br&gt;&lt;br&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="120" y="280" width="170" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="aMCfYm0FJ8U8pael_r1k-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;endArrow=none;endFill=0;" edge="1" parent="1" source="zUSMiL3VZw2tUGRwjvXk-42" target="zUSMiL3VZw2tUGRwjvXk-43">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="475" />
+              <mxPoint x="560" y="475" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zUSMiL3VZw2tUGRwjvXk-42" value="" style="strokeWidth=1;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;rotation=-90;" parent="1" vertex="1">
+          <mxGeometry x="650" y="370" width="50" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="zUSMiL3VZw2tUGRwjvXk-43" value="Reprogrammed microcontroller to read latest measurements, write it to serial and then empty the CSV file&lt;br&gt;(every 3 seconds after last MISO/MOSI change)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="350" y="430" width="170" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="aMCfYm0FJ8U8pael_r1k-2" value="USB Port" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="370" width="50" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="JAzhZsy2MUZGcYZ5Rvtm" name="BPMN">
+    <mxGraphModel dx="1251" dy="908" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
