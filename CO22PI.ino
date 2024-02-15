@@ -1,4 +1,4 @@
-#include <SdFat.h>
+#include <SD.h>
 #include <SPI.h>
 #include <list>
 // Include pin related data
@@ -89,6 +89,7 @@ void setup()
 	}
 
 	delay(1000);
+
 	GIVE_SPI_CONTROL;	// Make sure that SD card is in INPUT mode
 	attachInterrupts(); // Listen to MOSI and MISO changes
 
@@ -96,107 +97,112 @@ void setup()
 	log(LogLevel::Info, "Started!");
 }
 
-struct CsvFileResponse
+/* Return name of largest CSV file. */
+auto getCsvFile()
 {
-	String latest_fname;		 // Filename to return
-	std::list<String> file_list; // List of all files Found
-};
+	// All found CSV files
+	std::list<String> file_list = {};
 
-/* Return name of last modified CSV file.  */
-auto getCsvFile(SdFs *sd)
-{
-	sd->chvol();
-
-	File32 file, dir;
-
-	// Response data
-	CsvFileResponse response;
-	response.latest_fname = "";
-	response.file_list = {};
-
-	if (!dir.open("/"))
+	File root = SD.open("/");
+	if (!root)
 	{
-
 		log(LogLevel::Error, "Failed to open root directory!");
-		dir.close();
-		return response;
+		return file_list;
 	}
 
-	// Variables to keep track
-	char fname[64];
-	uint16 latestdate = 0, latesttime = 0;
-	uint16 moddate, modtime;
+	uint32_t largest_file_size = 0;
 
-	while (file.openNext(&dir, O_READ))
+	while (true)
 	{
-		file.clearWriteError();
-		file.clearError();
-		if (!file.isDir())
+		File entry = root.openNextFile();
+		if (!entry)
 		{
-			file.getName(fname, sizeof(fname));
-			response.file_list.push_back(String(fname));
-			if (!file.isHidden())
+			break;
+		}
+		log(LogLevel::Debug, "openNext loop increment");
+		String name = String(entry.name());
+		if (entry.isDirectory())
+		{
+			log(LogLevel::Debug, "Detected folder " + name);
+		}
+		else if (name.endsWith(".CSV") || name.endsWith(".csv"))
+		{
+			log(LogLevel::Debug, "Detected CSV file " + name);
+			uint32_t file_size = entry.size();
+			if (file_size > largest_file_size)
 			{
-				file.getModifyDateTime(&moddate, &modtime);
-				if (String(fname).endsWith(".csv") && moddate > latestdate && modtime > latesttime)
-				{
-
-					response.latest_fname = String(fname);
-				}
+				largest_file_size = file_size;
+				file_list.push_front(name);
+				log(LogLevel::Debug, "Push front (" + String(file_size) + ")");
+			}
+			else
+			{
+				file_list.push_back(name);
+				log(LogLevel::Debug, "Push back (" + String(file_size) + ")");
 			}
 		}
-		file.close();
+		else
+		{
+			log(LogLevel::Debug, "Detected non-csv file " + name);
+		}
+		entry.close();
 	}
 
-	return response;
+	root.close();
+	return file_list;
 }
 
-/* Return 2nd line of given file. */
-String readLastLineOfFile(SdFs *sd, String fname)
+/* Return last line of given file. */
+String readLastLineOfFile(String fname)
 {
-	sd->chvol();
-
-	// Open file in read only mode
-	FsFile file = sd->open(fname, O_RDONLY);
-	file.rewind();
-
-	String line;
-	char linetoread[64];
-
-	int i = 2;
-	while (i-- > 0)
+	File csvFile = SD.open(fname);
+	if (!csvFile)
 	{
-		int n = file.fgets(linetoread, 64); // Line length should always be <<< 64
-		if (n <= 0)
-		{
-			log(LogLevel::Error, "Reading file failed (fgets failed)");
-			file.close();
-			return "";
-		}
-		if (linetoread[n - 1] != '\n' && n == (sizeof(linetoread) - 1))
-		{
-			log(LogLevel::Error, "Reading file failed (line too long)");
-			file.close();
-			return "";
-		}
-		line = String(linetoread);
+		log(LogLevel::Error, "Failed to open file");
+		return "";
 	}
 
-	file.close();
+	String line = "";
+	char buffer[64];
+	int index = 0;
+
+	while (csvFile.available() > 0)
+	{
+		// read character and store in buffer
+		buffer[index] = csvFile.read();
+		// if newline or carriagereturn encountered
+		if (buffer[index] == '\n' || buffer[index] == '\r')
+		{
+			// replace newline or carriagereturn by string terminator character so we have a proper C-style string
+			buffer[index] = '\0';
+			// reset index so next line will fill buffer from beginning
+			index = 0;
+			// if there is actual text
+			if (strlen(buffer) != 0)
+			{
+				line = String(buffer);
+				log(LogLevel::Debug, "Line: " + line);
+			}
+		}
+		else
+		{
+			index++;
+		}
+	}
+
+	csvFile.close();
 	line.trim();
 	return line;
 }
 
 /* Delete ALL files on SD card */
-void deleteAllFiles(SdFs *sd, std::list<String> filesToDelete)
+void deleteAllFiles(std::list<String> filesToDelete)
 {
-	sd->chvol();
-
 	std::list<String>::iterator it;
 	for (it = filesToDelete.begin(); it != filesToDelete.end(); ++it)
 	{
 		String name = it->c_str();
-		if (sd->remove(name))
+		if (SD.remove(name))
 		{
 			log(LogLevel::Info, "Deleted " + name);
 		}
@@ -205,8 +211,7 @@ void deleteAllFiles(SdFs *sd, std::list<String> filesToDelete)
 			log(LogLevel::Error, "Failed to delete " + name);
 		}
 	}
-
-	log(LogLevel::Debug, "Procedure deleteAllFiles complete");
+	log(LogLevel::Debug, "Files deleted successfully");
 }
 
 void loop(void)
@@ -218,20 +223,19 @@ void loop(void)
 
 		log(LogLevel::Info, "Starting read procedure");
 
-		SdFs sd;
-		if (sd.begin(SD_CONFIG))
+		if (SD.begin(SD_CS_PIN))
 		{
 
-			auto csvResponse = getCsvFile(&sd);
-			if (csvResponse.latest_fname.length() == 0)
+			auto file_list = getCsvFile();
+			if (file_list.size() == 0)
 			{
 
 				log(LogLevel::Error, "Failed to find suitable CSV file");
 			}
 			else
 			{
-				log(LogLevel::Info, "Found file with name: " + csvResponse.latest_fname);
-				String line = readLastLineOfFile(&sd, csvResponse.latest_fname);
+				log(LogLevel::Info, "Found file with name: " + file_list.front());
+				String line = readLastLineOfFile(file_list.front());
 				if (line.length() == 0)
 				{
 
@@ -241,15 +245,15 @@ void loop(void)
 				{
 					Serial.println(line);
 				}
+				deleteAllFiles(file_list);
 			}
-			deleteAllFiles(&sd, csvResponse.file_list);
-			sd.end();
 		}
 		else
 		{
 			log(LogLevel::Error, "Failed to start SD card");
 		}
 
+		SD.end();
 		GIVE_SPI_CONTROL; // Set SPI as INPUT
 		reading = false;
 	}
