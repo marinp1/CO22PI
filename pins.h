@@ -8,8 +8,6 @@
 #define SCLK_PIN 14
 #define CS_SENSE 5
 
-#define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_HALF_SPEED)
-
 #define INIT_LED                  \
     {                             \
         pinMode(LED_PIN, OUTPUT); \

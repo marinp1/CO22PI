@@ -14,6 +14,7 @@ volatile bool reading = false;
 
 enum LogLevel
 {
+	Verbose,
 	Debug,
 	Info,
 	Error,
@@ -27,6 +28,9 @@ String logLevelToText(LogLevel level)
 {
 	switch (level)
 	{
+	case LogLevel::Verbose:
+		return "DEBUG";
+		break;
 	case LogLevel::Debug:
 		return "DEBUG";
 		break;
@@ -181,7 +185,7 @@ String readLastLineOfFile(String fname)
 			if (strlen(buffer) != 0)
 			{
 				line = String(buffer);
-				log(LogLevel::Debug, "Line: " + line);
+				log(LogLevel::Verbose, "Line: " + line);
 			}
 		}
 		else
@@ -216,14 +220,14 @@ void deleteAllFiles(std::list<String> filesToDelete)
 
 void loop(void)
 {
-	if (should_read && (millis() - last_mosi > 5000))
+	if (should_read && (millis() - last_mosi > 2000))
 	{
 		should_read = false; // Mark read as one even on failure
 		reading = true;
 
 		log(LogLevel::Info, "Starting read procedure");
 
-		if (SD.begin(SD_CS_PIN))
+		if (SD.begin(SD_CS_PIN, SPI_QUARTER_SPEED))
 		{
 
 			auto file_list = getCsvFile();
