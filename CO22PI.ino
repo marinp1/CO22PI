@@ -1,7 +1,6 @@
 #include <SD.h>
 #include <SPI.h>
 #include <list>
-// Include pin related data
 #include "pins.h"
 
 // Keep track of timestamps when pins have changed value

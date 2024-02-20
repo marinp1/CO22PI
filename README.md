@@ -1,4 +1,4 @@
-# C022PI
+# CO22PI
 
 > _Purpose: Read CO2, Humidity and Temperature measurements in real-time from external sensor's MicroSD card through adapters, hacks and bubblegum._
 
@@ -21,9 +21,9 @@ It supports logging data to MicroSD card, however there is no easy way to read t
 
 ### How it works?
 
-By attaching interrupts to MISO and MOSI pins we can detect when AirC02ntrol is using the SD card. It seems to write data in 30second intervals, so by waiting 3s after last pin change we can be quite sure that we are safe to read the SD card ourselvers.
+By attaching interrupts to MISO and MOSI pins we can detect when AirC02ntrol is using the SD card. It seems to write data in 30second intervals, so by waiting 2s after last pin change we can be quite sure that we are safe to read the SD card ourselvers.
 
-Program reads the SD card with [SDFat](https://github.com/greiman/SdFat) library and finds the CSV file that was last modified, and prints the 2nd line of that file to serial (1st line is the header).
+Program reads the SD card with [SDFat](https://github.com/greiman/SdFat) library and finds the CSV file that was last modified, and prints the last line of that file to serial (1st line is the header).
 
 After each read it deletes the file to make sure that SD card never fills up and the reading does not take too long.
 
@@ -82,3 +82,5 @@ template:
 ## Known issues
 
 - Card reader might sometimes get stuck and AirC02ntrol displays `CARD ERROR`. Can be resolved by re-formatting the SD card.
+- AirCo2ntrol sometimes emits invalid CO2 values (1 or 0 ppm), don't know why.
+- Home Assistant might not recognise the serial device correctly, restart seems to fix the issue.
